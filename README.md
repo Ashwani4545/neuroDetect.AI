@@ -1,5 +1,5 @@
 
-# 🏥 MediAssist.AI — Universal Medical Intelligence Platform
+# 🏥 NeuroDetect.AI — Universal Medical Intelligence Platform
 
 
 <div align="center">
