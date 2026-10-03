@@ -245,20 +245,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Populate confidence badge
                 const badge = document.getElementById('confidenceBadge');
                 badge.innerText = `Confidence: ${data.confidence}`;
-                
-                if (data.detected) {
+
+                // Modality routing confidence warning (surfaced when the
+                // scan type was inferred/defaulted rather than confirmed)
+                const warnBanner = document.getElementById('modalityWarningBanner');
+                const warnText = document.getElementById('modalityWarningText');
+                if (data.modality_warning || data.save_error) {
+                    warnText.innerText = [data.modality_warning, data.save_error].filter(Boolean).join(' ');
+                    warnBanner.classList.remove('hidden');
+                } else {
+                    warnBanner.classList.add('hidden');
+                }
+
+                const AI_SUFFIX = ' This is an AI-generated, exploratory finding — not a clinical diagnosis. Please have it reviewed by a qualified medical professional.';
+
+                if (data.model_not_trained) {
+                    // Honest neutral state — this is NOT a negative/clean result,
+                    // no classification was actually performed.
+                    badge.style.color = '#6b7280';
+                    badge.style.borderColor = 'rgba(107, 114, 128, 0.2)';
+                    badge.style.background = 'rgba(107, 114, 128, 0.1)';
+                    document.getElementById('explainText').innerText = data.findings_text;
+                } else if (data.detected) {
                     badge.style.color = '#ef4444'; // Red showing danger
                     badge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
                     badge.style.background = 'rgba(239, 68, 68, 0.1)';
                     
                     if (data.modality === 'BLOOD_TEST') {
-                        document.getElementById('explainText').innerText = `Anomaly Detected. The blood panel indicates parameters that fall outside standard physiological reference ranges. Findings: ${data.findings_text}`;
+                        document.getElementById('explainText').innerText = `Possible Finding. The blood panel shows parameters that may fall outside standard physiological reference ranges. Findings: ${data.findings_text}.${AI_SUFFIX}`;
                     } else if (data.modality === 'CXR') {
-                        document.getElementById('explainText').innerText = `Anomaly Detected. The chest X-ray indicates consolidation or cardiovascular silhouettes. Findings: ${data.findings_text}`;
+                        document.getElementById('explainText').innerText = `Possible Finding. The chest X-ray shows patterns that may be compatible with consolidation or an abnormal cardiovascular silhouette. Findings: ${data.findings_text}.${AI_SUFFIX}`;
                     } else if (data.modality === 'ECG') {
-                        document.getElementById('explainText').innerText = `Anomaly Detected. The ECG trace indicates heart rate or rhythm variances. Findings: ${data.findings_text}`;
+                        document.getElementById('explainText').innerText = `Possible Finding. The ECG trace shows patterns that may be compatible with heart rate or rhythm variance. Findings: ${data.findings_text}.${AI_SUFFIX}`;
+                    } else if (data.modality === 'MRI') {
+                        document.getElementById('explainText').innerText = `Possible Finding. ${data.findings_text}${AI_SUFFIX}`;
                     } else {
-                        document.getElementById('explainText').innerText = `Anomaly Detected. The system detected hypodense regions indicating possible stroke-affected areas. Confidence level: ${data.confidence}. See overlay for exact visual localization.`;
+                        document.getElementById('explainText').innerText = `Possible Finding. The system flagged a hypodense region that may be compatible with a stroke-affected area. Confidence level: ${data.confidence}. See overlay for visual localization.${AI_SUFFIX}`;
                     }
                 } else {
                     badge.style.color = '#10b981'; // Green showing clean
@@ -266,9 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     badge.style.background = 'rgba(16, 185, 129, 0.1)';
                     
                     if (data.modality === 'BLOOD_TEST') {
-                        document.getElementById('explainText').innerText = `No Analysis Findings. All blood test metrics are within reference ranges.`;
+                        document.getElementById('explainText').innerText = `No Findings Flagged. All parsed blood test metrics fall within reference ranges. This AI screening does not rule out all conditions — routine follow-up with your doctor is still recommended.`;
+                    } else if (data.modality === 'MRI') {
+                        document.getElementById('explainText').innerText = `No Findings Flagged. ${data.findings_text} This AI screening does not rule out all conditions.`;
                     } else {
-                        document.getElementById('explainText').innerText = `No Analysis Findings. The model did not detect significant anomalies in this scan slice.`;
+                        document.getElementById('explainText').innerText = `No Findings Flagged. The model did not detect significant anomalies in this scan. This AI screening does not rule out all conditions — it is not a substitute for a radiologist's or physician's review.`;
                     }
                 }
 
@@ -356,14 +380,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let modalityName = "Brain CT";
         if (data.modality === 'CXR') modalityName = "Chest X-Ray";
         if (data.modality === 'ECG') modalityName = "ECG Waveform";
+        if (data.modality === 'MRI') modalityName = "Brain MRI";
         if (data.modality === 'BLOOD_TEST') modalityName = "Blood Panel";
         if (data.modality === 'DERMATO') modalityName = "Dermatology Scan";
         if (data.modality === 'RETINAL') modalityName = "Retinal Fundus Scan";
         if (data.modality === 'BONE_XRAY') modalityName = "Bone X-Ray";
         
         const msg = data.detected 
-            ? `Hello, I am MediAssist, your compassionate care companion. I have reviewed your ${modalityName} results. The analysis noted some anomalies (${data.findings_text}). I understand this can cause anxiety, but please know I am here to help explain what these results mean in simple terms. How can I support you right now?`
-            : `Hello, I am MediAssist, your compassionate care companion. I have reviewed your ${modalityName} report. The analysis did not flag any significant anomalies (confidence: ${data.confidence}). I am here if you have any questions or would like details on any of these parameters. What would you like to discuss?`;
+            ? `Hello, I am NeuroDetect AI, your compassionate care companion. I have reviewed your ${modalityName} results. The analysis noted some anomalies (${data.findings_text}). I understand this can cause anxiety, but please know I am here to help explain what these results mean in simple terms. How can I support you right now?`
+            : `Hello, I am NeuroDetect AI, your compassionate care companion. I have reviewed your ${modalityName} report. The analysis did not flag any significant anomalies (confidence: ${data.confidence}). I am here if you have any questions or would like details on any of these parameters. What would you like to discuss?`;
             
         addMessageBubble('assistant', msg);
     }

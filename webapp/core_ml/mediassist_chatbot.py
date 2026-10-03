@@ -123,7 +123,7 @@ class MediAssistChatbot:
             resp_paragraphs.append("Feel free to ask me specifically about dietary advice, herbal remedies, exercise guidelines, or questions to ask your doctor!")
 
         # Always add medical safety disclaimer footer
-        resp_paragraphs.append("\n*Disclaimer: MediAssist.AI is an academic research platform. Always review report findings with a qualified medical specialist for clinical diagnosis.*")
+        resp_paragraphs.append("\n*Disclaimer: NeuroDetect AI is an academic research platform. Always review report findings with a qualified medical specialist for clinical diagnosis.*")
 
         full_response = "\n\n".join(resp_paragraphs)
         translated_response = self._apply_language(full_response, language)
@@ -146,10 +146,10 @@ class MediAssistChatbot:
         """Simple localized greeting/footer wrapper for requested languages."""
         lang = (language or "English").lower()
         if 'hindi' in lang:
-            prefix = "🙏 **MediAssist.AI (हिंदी सहायता)**:\n\n"
+            prefix = "🙏 **NeuroDetect AI (हिंदी सहायता)**:\n\n"
             return prefix + text
         elif 'spanish' in lang:
-            prefix = "🇪🇸 **MediAssist.AI (Asistente Médico)**:\n\n"
+            prefix = "🇪🇸 **NeuroDetect AI (Asistente Médico)**:\n\n"
             return prefix + text
         return text
 

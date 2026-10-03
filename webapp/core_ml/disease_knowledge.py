@@ -474,6 +474,161 @@ class DiseaseKnowledgeEngine:
             ]
         )
 
+        # ── 8. BRAIN MRI DISEASE CLASSIFIER CONDITIONS ──────────────────────────
+        # NOTE: these are produced by a weakly-supervised image classifier (see
+        # webapp/core_ml/mri_classifier_analyzer.py), not a segmentation model —
+        # "region affected" is an approximate Grad-CAM heatmap location, not a
+        # calibrated anatomical coordinate. Treat confidence/region language
+        # accordingly throughout this section.
+        kb['MRI_GLIOMA'] = DiseaseCondition(
+            name="Findings Compatible with Glioma",
+            category="Neuro-Oncology",
+            explanation="Gliomas are tumors arising from glial (supportive) brain cells. They range widely in grade from slow-growing to aggressive, and appearance alone cannot determine grade — that requires biopsy/histopathology.",
+            causes="Cause is usually unknown; rare inherited genetic syndromes and prior radiation exposure are recognized risk factors in a minority of cases.",
+            untreated_consequences="Depending on grade and location, an untreated glioma can cause progressive neurological deficits, seizures, raised intracranial pressure, and is potentially life-threatening — this needs prompt specialist evaluation, not a wait-and-see approach.",
+            diet_recommended=["Balanced, anti-inflammatory whole-food diet", "Adequate protein for treatment tolerance", "Hydration"],
+            diet_avoid=["Alcohol", "Unproven supplement megadoses without oncologist sign-off"],
+            herbal_remedies=[],
+            exercise_allowed=["Light walking as tolerated, guided by your care team"],
+            exercise_restrictions=["Avoid strenuous activity or contact sports until cleared by your neuro-oncology team"],
+            telemetry_targets={"Neurological symptom log": "Track new headaches, weakness, vision or speech changes"},
+            specialist="Neuro-Oncologist / Neurosurgeon",
+            urgency="High / Prompt Specialist Referral",
+            doctor_questions=[
+                "What is the likely grade, and what further imaging or biopsy is needed to confirm it?",
+                "What are the treatment options (surgery, radiation, chemotherapy) for this location?",
+                "What symptoms should prompt an emergency visit?",
+                "Is a second opinion or multidisciplinary tumor board review appropriate?"
+            ]
+        )
+
+        kb['MRI_MENINGIOMA'] = DiseaseCondition(
+            name="Findings Compatible with Meningioma",
+            category="Neuro-Oncology",
+            explanation="Meningiomas arise from the meninges (the brain's outer covering), not brain tissue itself. Most are slow-growing and benign, though location can still make them clinically significant.",
+            causes="Cause is usually unknown; prior radiation to the head and certain genetic conditions (e.g. NF2) raise risk.",
+            untreated_consequences="Many small, asymptomatic meningiomas are simply monitored. Larger or growing ones can compress adjacent brain tissue, causing headaches, seizures, or focal neurological deficits.",
+            diet_recommended=["Balanced whole-food diet", "Adequate hydration"],
+            diet_avoid=["No specific dietary restriction is established — discuss with your specialist"],
+            herbal_remedies=[],
+            exercise_allowed=["Normal activity as tolerated, unless your specialist advises otherwise"],
+            exercise_restrictions=["Contact sports may warrant caution — confirm with your specialist"],
+            telemetry_targets={"Neurological symptom log": "Track new headaches, vision changes, or seizures"},
+            specialist="Neurosurgeon / Neurologist",
+            urgency="Moderate — Specialist Evaluation Recommended",
+            doctor_questions=[
+                "Does this need active treatment now, or ongoing surveillance imaging?",
+                "How fast do meningiomas like this typically grow?",
+                "What symptoms would mean I should come back sooner than my next scheduled scan?"
+            ]
+        )
+
+        kb['MRI_PITUITARY'] = DiseaseCondition(
+            name="Findings Compatible with a Pituitary Tumor",
+            category="Endocrinology / Neuro-Oncology",
+            explanation="Pituitary tumors arise in the pituitary gland at the base of the brain. Most are benign adenomas; some produce excess hormones (affecting growth, thyroid, cortisol, or reproductive hormones), others are hormonally inactive but can press on nearby structures including the optic nerves.",
+            causes="Usually sporadic with no identifiable cause; rare hereditary endocrine syndromes account for a small fraction of cases.",
+            untreated_consequences="Depending on type, untreated pituitary tumors can cause hormonal imbalance, vision loss (from optic chiasm compression), and other systemic effects.",
+            diet_recommended=["Balanced diet", "Discuss any hormone-specific dietary guidance with your endocrinologist"],
+            diet_avoid=["Excess caffeine/alcohol if hormonal symptoms present — confirm with your specialist"],
+            herbal_remedies=[],
+            exercise_allowed=["Normal activity as tolerated"],
+            exercise_restrictions=["None specific, pending your specialist's evaluation"],
+            telemetry_targets={"Vision changes": "Report any new visual field loss promptly", "Hormonal symptoms": "Track fatigue, menstrual changes, growth changes"},
+            specialist="Endocrinologist + Neurosurgeon",
+            urgency="Moderate — Specialist Evaluation Recommended",
+            doctor_questions=[
+                "Do I need hormone-level blood testing to check for a functioning tumor?",
+                "Should I have a formal visual field test?",
+                "Is surgery, medication, or monitoring the right approach here?"
+            ]
+        )
+
+        kb['MRI_NO_TUMOR'] = DiseaseCondition(
+            name="No Tumor Pattern Flagged",
+            category="Neurology",
+            explanation="The classifier did not flag a pattern consistent with the tumor types in its training categories (glioma, meningioma, pituitary tumor).",
+            causes="Normal-appearing scan relative to the classifier's training categories.",
+            untreated_consequences="N/A — maintain routine health monitoring.",
+            diet_recommended=["Balanced whole-food diet", "Regular hydration"],
+            diet_avoid=["Excess processed food and alcohol, as general good practice"],
+            herbal_remedies=[],
+            exercise_allowed=["Regular activity as normally tolerated"],
+            exercise_restrictions=["None"],
+            telemetry_targets={},
+            specialist="General Physician / Neurologist if symptoms persist",
+            urgency="Routine",
+            doctor_questions=[
+                "Given my symptoms, is any further imaging or follow-up still warranted?",
+                "This is a screening classifier result, not a radiologist read — should I get a formal report on this scan?"
+            ]
+        )
+
+        kb['MRI_ATROPHY'] = DiseaseCondition(
+            name="Findings Compatible with Brain Atrophy",
+            category="Neurology",
+            explanation="Brain atrophy refers to loss of brain volume/tissue, seen as enlarged ventricles or widened sulci. It can be a normal part of aging or associated with neurodegenerative conditions, prior injury, or chronic vascular disease.",
+            causes="Normal aging, neurodegenerative disease (e.g. Alzheimer's, other dementias), chronic alcohol use, prior brain injury, or chronic small-vessel ischemic disease.",
+            untreated_consequences="Depending on the underlying cause, progression can be associated with cognitive decline, memory issues, or motor changes — the cause matters more than the finding itself.",
+            diet_recommended=["Mediterranean-style diet", "Omega-3 rich foods", "Foods supporting cardiovascular health"],
+            diet_avoid=["Excess alcohol", "High saturated fat/sodium diets"],
+            herbal_remedies=[
+                {"name": "Brahmi (Bacopa monnieri)", "benefit": "Traditionally used to support cognitive function", "dosage": "250-500 mg daily — discuss with your doctor first"}
+            ],
+            exercise_allowed=["Regular aerobic exercise", "Cognitive engagement activities"],
+            exercise_restrictions=["None specific — tailor to overall health status"],
+            telemetry_targets={"Cognitive symptom tracking": "Note any changes in memory, mood, or daily function"},
+            specialist="Neurologist (consider neuropsychological testing)",
+            urgency="Moderate — Specialist Evaluation Recommended",
+            doctor_questions=[
+                "Is this atrophy pattern consistent with normal aging or does it suggest a specific condition?",
+                "Would cognitive/neuropsychological testing be useful?",
+                "What vascular risk factors should be optimized?"
+            ]
+        )
+
+        kb['MRI_WMI'] = DiseaseCondition(
+            name="Findings Compatible with White Matter Intensity Changes",
+            category="Neurology",
+            explanation="White matter hyperintensities are areas of altered signal in the brain's white matter, most commonly related to small-vessel (microvascular) changes, though they can have other causes.",
+            causes="Most commonly chronic small-vessel ischemic disease related to hypertension, age, and vascular risk factors; less commonly demyelinating or inflammatory conditions.",
+            untreated_consequences="Extensive or progressive white matter changes are associated with increased risk of stroke and cognitive decline if underlying vascular risk factors aren't managed.",
+            diet_recommended=["Low-sodium, heart-healthy diet", "Mediterranean-style eating pattern"],
+            diet_avoid=["High sodium foods", "Excess saturated fat"],
+            herbal_remedies=[],
+            exercise_allowed=["Regular moderate aerobic exercise as cleared by your physician"],
+            exercise_restrictions=["None specific"],
+            telemetry_targets={"Blood Pressure": "< 130/80 mmHg", "Fasting Glucose": "< 100 mg/dL"},
+            specialist="Neurologist",
+            urgency="Moderate — Vascular Risk Factor Review Recommended",
+            doctor_questions=[
+                "Are these changes consistent with vascular risk, or is further workup needed to rule out other causes?",
+                "What blood pressure and cholesterol targets should I aim for?",
+                "Should I have a formal cognitive baseline assessment?"
+            ]
+        )
+
+        kb['MRI_ISCHEMIA'] = DiseaseCondition(
+            name="Findings Compatible with Cerebral Ischemia",
+            category="Neurology",
+            explanation="This pattern suggests reduced blood flow to an area of brain tissue. On MRI, this can represent anything from chronic small-vessel changes to a more recent ischemic event, which are managed very differently.",
+            causes="Atherosclerosis, small-vessel disease, embolic sources (e.g. atrial fibrillation), or uncontrolled vascular risk factors.",
+            untreated_consequences="Depending on whether the finding is acute or chronic, untreated ischemia can progress to further tissue damage, stroke, or cognitive decline.",
+            diet_recommended=["Heart-healthy, low-sodium diet", "Omega-3 rich foods", "Leafy greens"],
+            diet_avoid=["High sodium", "Trans fats", "Excess alcohol"],
+            herbal_remedies=[],
+            exercise_allowed=["Physician-cleared moderate cardio activity"],
+            exercise_restrictions=["Avoid strenuous activity until an acute event is ruled out"],
+            telemetry_targets={"Blood Pressure": "< 130/80 mmHg", "SpO2": "> 95%"},
+            specialist="Neurologist / Stroke Specialist",
+            urgency="High — Prompt Evaluation Recommended (rule out acute event)",
+            doctor_questions=[
+                "Is this an acute finding requiring immediate workup, or a chronic finding?",
+                "Do I need additional imaging (e.g. diffusion-weighted MRI) to clarify timing?",
+                "What is my current stroke risk and how should it be managed?"
+            ]
+        )
+
         return kb
 
     def identify_condition(self, modality: str, findings_text: str) -> DiseaseCondition:
@@ -523,6 +678,21 @@ class DiseaseKnowledgeEngine:
             if any(w in text_lower for w in ['fracture', 'cortical', 'discontinuity', 'disruption', 'break']):
                 return self.database['BONE_FRACTURE']
             return self.database['BONE_CLEAR']
+
+        elif m == 'MRI':
+            if any(w in text_lower for w in ['glioma']):
+                return self.database['MRI_GLIOMA']
+            elif any(w in text_lower for w in ['meningioma']):
+                return self.database['MRI_MENINGIOMA']
+            elif any(w in text_lower for w in ['pituitary']):
+                return self.database['MRI_PITUITARY']
+            elif any(w in text_lower for w in ['atrophy']):
+                return self.database['MRI_ATROPHY']
+            elif any(w in text_lower for w in ['white matter', 'wmi', 'white-matter']):
+                return self.database['MRI_WMI']
+            elif any(w in text_lower for w in ['ischemia', 'ischemic']):
+                return self.database['MRI_ISCHEMIA']
+            return self.database['MRI_NO_TUMOR']
 
         # Default fallback to Brain CT Ischemic Stroke if unknown text with detected anomalies
         return self.database['CT_ISCHEMIC_STROKE'] if 'anomaly' in text_lower else self.database['CT_CLEAR']

@@ -1,0 +1,78 @@
+# Local development stack. The production Dockerfile is built for a
+# single-container deploy (e.g. Hugging Face Spaces); this compose file adds
+# a real Postgres so local dev matches production instead of falling back to
+# sqlite, and mounts the code + media for live iteration.
+#
+# Usage:
+#   cp .env.example .env      # fill in a real SECRET_KEY etc.
+#   docker compose up --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: neurodetect
+      POSTGRES_USER: neurodetect
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neurodetect"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: ${SECRET_KEY:-django-insecure-local-dev-only-do-not-deploy-with-this-key}
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      DATABASE_URL: "postgres://neurodetect:${POSTGRES_PASSWORD:-devpassword}@db:5432/neurodetect"
+    ports:
+      - "8000:7860"
+    volumes:
+      - ./webapp/media:/app/webapp/media
+
+  # ── FastAPI + React implementation (backend/, frontend/) ──────────────────
+  # A separate, parallel implementation of the NCCT segmentation platform on
+  # the stack requested in the project's FastAPI/React spec — reuses the same
+  # ml/ pipeline as `web` above, but does not share its database or the rest
+  # of the Django app's multi-modality features (chatbot, telehealth, etc).
+  # Defaults to sqlite (see backend/.env.example to point it at Postgres too).
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-sqlite:////app/backend/app.db}
+      CORS_ORIGINS: "http://localhost:5174,http://127.0.0.1:5174"
+    ports:
+      - "8001:8000"
+    volumes:
+      - backend_uploads:/app/backend/uploads
+      - backend_results:/app/backend/results
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8001/api
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5174:4173"
+
+volumes:
+  pgdata:
+  backend_uploads:
+  backend_results:

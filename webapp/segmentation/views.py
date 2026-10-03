@@ -10,7 +10,7 @@ from django.db.models import Avg
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.decorators import login_required
-from .models import PatientScan, ChatMessage, PatientGuidance, TelehealthConsultation, ConsultationMessage
+from .models import PatientScan, ChatMessage, PatientGuidance, PatientRiskProfile, TelehealthConsultation, ConsultationMessage
 
 # Allowed file extensions for upload validation
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.dcm', '.pdf'}
@@ -160,8 +160,10 @@ def settings_page(request):
 def delete_scan_api(request, scan_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Method not allowed.'})
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required.'}, status=401)
     try:
-        scan = PatientScan.objects.get(id=scan_id)
+        scan = PatientScan.objects.get(id=scan_id, user=request.user)
         # Delete associated media files from storage
         for img_url in [scan.original_image, scan.mask_image, scan.overlay_image]:
             if img_url.startswith('/media/'):
@@ -181,7 +183,11 @@ def delete_scan_api(request, scan_id):
 
 @csrf_exempt
 def predict_api(request):
-    if request.method != 'POST' or not request.FILES.get('image'):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required.'}, status=401)
+    if not request.FILES.get('image'):
         return JsonResponse({'success': False, 'error': 'No image provided.'})
 
     image_file = request.FILES['image']
@@ -216,16 +222,28 @@ def predict_api(request):
     out_dir = os.path.join(settings.MEDIA_ROOT, 'results')
     os.makedirs(out_dir, exist_ok=True)
 
+    from core_ml.ingestion import get_ingestion_service, UnsupportedModalityError
+    ingestion = get_ingestion_service()
+
     try:
-        from core_ml.ingestion import get_ingestion_service
-        ingestion = get_ingestion_service()
-        
         # Route file to correct analyzer (Brain CT, Chest X-ray, ECG, or Blood Test)
         routed = ingestion.route_file(input_path, out_dir)
-        modality = routed['modality']
-        result = routed['result']
+    except UnsupportedModalityError as e:
+        # Confidently identified as a modality we don't have a validated
+        # pipeline for (e.g. MRI). Tell the user plainly instead of running
+        # an unrelated model on it.
+        return JsonResponse({'success': False, 'error': str(e), 'unsupported_modality': True})
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        print(f"[Ingestion Error] {e}")
+        return JsonResponse({
+            'success': False,
+            'error': 'This file could not be processed. Please upload a valid, non-corrupted '
+                     'brain CT, chest X-ray, ECG, skin/retinal photo, bone X-ray image, or blood-test PDF.'
+        })
+
+    modality = routed['modality']
+    result = routed['result']
+    modality_warning = routed.get('modality_warning')
 
     # Determine mask and overlay URLs
     if modality == 'BLOOD_TEST':
@@ -248,9 +266,11 @@ def predict_api(request):
 
     # ── Save to Database ────────────────────────────────────────────────────
     scan_id = None
+    risk_data = {}
+    save_error = None
     try:
         scan = PatientScan.objects.create(
-            user=request.user if request.user.is_authenticated else None,
+            user=request.user,
             scan_name=image_file.name,
             modality=modality,
             original_image=original_url,
@@ -293,8 +313,11 @@ def predict_api(request):
             detailed_metrics=risk_data['detailed_metrics']
         )
     except Exception as db_err:
-        # Log error, but don't crash response if db write fails
+        # The image analysis itself succeeded even if saving it fails, so we
+        # still return the result — but we tell the user their scan was NOT
+        # saved to history, rather than silently returning success=true.
         print(f"[Database Error] Could not log scan, guidance, or risk: {db_err}")
+        save_error = 'This analysis could not be saved to your scan history due to a server error. You can still view the result below.'
 
     return JsonResponse({
         'success':      True,
@@ -308,7 +331,9 @@ def predict_api(request):
         'findings_text': result.get('findings_text', ''),
         'metrics':       result.get('metrics', []), # blood test parsed parameters
         'guidance':      guidance_data,
-        'risk_profile':  risk_data
+        'risk_profile':  risk_data,
+        'modality_warning': modality_warning,
+        'save_error':    save_error
     })
 
 
@@ -316,9 +341,11 @@ def predict_api(request):
 def chat_api(request, scan_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Method not allowed.'})
-    
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required.'}, status=401)
+
     try:
-        scan = PatientScan.objects.get(id=scan_id)
+        scan = PatientScan.objects.get(id=scan_id, user=request.user)
     except PatientScan.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Scan not found.'})
         
@@ -512,9 +539,11 @@ def _get_mock_response_english(query, scan):
 def recalculate_risk_api(request, scan_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST method required'})
-        
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required.'}, status=401)
+
     try:
-        scan = PatientScan.objects.get(id=scan_id)
+        scan = PatientScan.objects.get(id=scan_id, user=request.user)
     except PatientScan.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Scan not found'})
         
@@ -557,9 +586,11 @@ def recalculate_risk_api(request, scan_id):
 def request_consult_api(request, scan_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST method required'})
-        
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required.'}, status=401)
+
     try:
-        scan = PatientScan.objects.get(id=scan_id)
+        scan = PatientScan.objects.get(id=scan_id, user=request.user)
     except PatientScan.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Scan not found'})
         
@@ -620,8 +651,10 @@ def request_consult_api(request, scan_id):
 
 @csrf_exempt
 def consult_messages_api(request, consult_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required.'}, status=401)
     try:
-        consult = TelehealthConsultation.objects.get(id=consult_id)
+        consult = TelehealthConsultation.objects.get(id=consult_id, scan__user=request.user)
     except TelehealthConsultation.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Consultation session not found'})
         
@@ -720,9 +753,11 @@ def consult_messages_api(request, consult_id):
 def invite_specialist_api(request, consult_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST method required'})
-        
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required.'}, status=401)
+
     try:
-        consult = TelehealthConsultation.objects.get(id=consult_id)
+        consult = TelehealthConsultation.objects.get(id=consult_id, scan__user=request.user)
     except TelehealthConsultation.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Consultation session not found'})
         
@@ -757,9 +792,11 @@ def invite_specialist_api(request, consult_id):
 def signoff_consult_api(request, consult_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST method required'})
-        
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required.'}, status=401)
+
     try:
-        consult = TelehealthConsultation.objects.get(id=consult_id)
+        consult = TelehealthConsultation.objects.get(id=consult_id, scan__user=request.user)
     except TelehealthConsultation.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Consultation session not found'})
         
@@ -849,7 +886,9 @@ def translate_to_language(text, language):
 
 
 def patient_history_api(request):
-    scans = PatientScan.objects.all().order_by('-id')[:10]
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required.'}, status=401)
+    scans = PatientScan.objects.filter(user=request.user).order_by('-id')[:10]
     scans = list(reversed(list(scans)))
     
     history = []

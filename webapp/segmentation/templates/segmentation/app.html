@@ -1,7 +1,7 @@
 {% extends 'segmentation/base.html' %}
 {% load static %}
 
-{% block title %}Scanner | MediAssist.AI{% endblock %}
+{% block title %}Scanner | NeuroDetect AI{% endblock %}
 {% block body_class %}dark-theme app-body{% endblock %}
 
 {% block content %}
@@ -33,6 +33,11 @@
                     <div class="results-header">
                         <h3>Analysis Results</h3>
                         <div id="confidenceBadge" class="confidence-badge">Confidence: --</div>
+                    </div>
+                    <p style="font-size: 10.5px; color: var(--text-secondary); margin: -4px 0 10px; font-style: italic;">AI-estimated finding &middot; not a clinical diagnosis &middot; requires confirmation by a qualified medical professional</p>
+                    <div id="modalityWarningBanner" class="hidden" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #b45309; font-size: 11.5px; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 6px;">
+                        <i class="ti ti-alert-triangle" style="margin-top: 1px;"></i>
+                        <span id="modalityWarningText"></span>
                     </div>
 
                     <!-- Images display grid (CT/XRay/ECG) -->
@@ -309,7 +314,8 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">Based on your scan type and geographical location, these nearby specialists are available for instant consultation panel requests.</p>
+                                    <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Based on your scan type, here's the kind of specialist you may want to consult, with sample listings by city.</p>
+                                    <p style="font-size: 10.5px; color: #b45309; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; padding: 6px 10px; margin-bottom: 15px;"><i class="ti ti-info-circle" style="vertical-align: -2px;"></i> Demo directory &mdash; these are illustrative sample listings, not verified real-world doctors or live availability. Please book through your own hospital or a trusted, verified directory.</p>
                                     
                                     <div id="specialistListContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                                         <!-- Dynamic doctor cards -->
@@ -392,7 +398,7 @@
                                     <span class="status-indicator online"></span>
                                 </div>
                                 <div class="chatbot-info">
-                                    <h4 style="margin: 0; font-size: 13px;">MediAssist AI</h4>
+                                    <h4 style="margin: 0; font-size: 13px;">NeuroDetect AI</h4>
                                     <p style="margin: 0; font-size: 10px;">Empathetic Medical Companion</p>
                                 </div>
                             </div>
@@ -424,7 +430,7 @@
                         
                         <!-- Input field -->
                         <div class="chatbot-input-wrapper">
-                            <input type="text" id="chatInput" placeholder="Ask MediAssist a question..." autocomplete="off">
+                            <input type="text" id="chatInput" placeholder="Ask NeuroDetect AI a question..." autocomplete="off">
                             <button id="sendChatBtn" class="btn-chat-send" title="Send message">
                                 <i class="ti ti-send"></i>
                             </button>
@@ -444,6 +450,7 @@
         <h3 style="color: var(--accent-primary); display: flex; align-items: center; gap: 8px;"><i class="ti ti-alert-triangle" style="color: var(--danger);"></i> Medical Research Disclaimer</h3>
         <p>This software is provided strictly for academic, educational, and research purposes. It is <strong>not FDA-approved</strong> and is <strong>not a certified medical device</strong>.</p>
         <p>By proceeding, you agree that this tool will not be used for clinical diagnosis, and you confirm that any data uploaded contains no personally identifiable information (PII) or Protected Health Information (PHI).</p>
+        <p><strong>Medical emergency?</strong> If you or someone else has sudden weakness, facial drooping, slurred speech, a sudden severe headache, loss of consciousness, seizures, or any other potentially life-threatening symptoms, do not wait for this tool &mdash; contact local emergency services immediately.</p>
         <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 0.5px solid #e5e7eb; padding-top: 1.5rem;">
             <a href="{% url 'landing' %}" class="btn-primary-outline" style="text-decoration: none;">Decline & Return</a>
             <button id="acceptDisclaimerBtn" class="btn-primary">I Accept</button>

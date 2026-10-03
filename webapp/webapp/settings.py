@@ -4,18 +4,37 @@ Django settings — works in both local dev and production (HF Spaces / Render).
 
 from pathlib import Path
 import os
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Make the repo-root ml/ package (offline training/inference pipeline —
+# see ml/README.md) importable from within the Django process, e.g.
+# `from ml.inference.mri_gradcam_inference import MRIGradCAMInference`.
+# Without this, webapp/core_ml/ would need its own duplicate copy of that
+# code the way webapp/core_ml/model.py currently duplicates ml/models/model.py
+# (a known, documented issue — see ml/README.md) — this avoids adding a third
+# instance of that problem for the new MRI classifier pipeline.
+REPO_ROOT = BASE_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+
 # ── Security ──────────────────────────────────────────────────────────────────
-SECRET_KEY = os.environ.get(
-    'SECRET_KEY',
-    'django-insecure-vqvglaka)6nb#d(prk6hu(m40=y@bp3h4*c9=l(i8z#g1xhzrd'
-)
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if os.environ.get('DEBUG', 'True') == 'True':
+        # Fallback ONLY for local dev when no .env is configured. Never used
+        # in prod: deployment must set a real SECRET_KEY env var.
+        SECRET_KEY = 'django-insecure-local-dev-only-do-not-deploy-with-this-key'
+    else:
+        raise RuntimeError(
+            'SECRET_KEY environment variable must be set when DEBUG=False.'
+        )
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'   # True locally, False in prod
 
-_allowed = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,*')
+_allowed = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',')]
 
 CSRF_TRUSTED_ORIGINS = [

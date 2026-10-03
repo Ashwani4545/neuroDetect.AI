@@ -1,6 +1,10 @@
 import os
 
 class TelehealthRouter:
+    # NOTE: This is a hardcoded, illustrative sample directory — not real,
+    # verified doctors. `get_closest_specialists` tags every result with
+    # `is_simulated: True` so any caller (this app's UI, or a future API
+    # consumer) can render it honestly rather than as a real listing.
     def __init__(self):
         # Simulated Doctor Directory
         self.doctors = [
@@ -101,9 +105,10 @@ class TelehealthRouter:
                 # Estimate distance using Haversine approximation
                 dist = self._haversine(p_lat, p_lon, doc['lat'], doc['lon'])
                 
-                # Copy doctor and inject distance
+                # Copy doctor and inject distance + simulated-data flag
                 doc_entry = dict(doc)
                 doc_entry['distance_km'] = round(dist, 1)
+                doc_entry['is_simulated'] = True
                 results.append(doc_entry)
                 
         # Sort by distance ascending

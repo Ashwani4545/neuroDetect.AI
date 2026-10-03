@@ -1,0 +1,15 @@
+{
+    "dataset_roots": [
+        "data/mri_raw/brain_tumor_mri",
+        "data/mri_raw/brain_disorders_four_categories"
+    ],
+    "img_size": 224,
+    "batch_size": 32,
+    "val_fraction": 0.15,
+    "epochs": 20,
+    "lr": 0.0001,
+    "pretrained": false,
+    "seed": 42,
+    "num_workers": 2,
+    "checkpoint_dir": "checkpoints_mri_classifier"
+}
