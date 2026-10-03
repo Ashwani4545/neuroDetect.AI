@@ -1,5 +1,10 @@
 
+<<<<<<< HEAD
 # 🧠 NeuroDetect AI — Multi-Modality Medical Intelligence Platform
+=======
+# 🏥 NeuroDetect.AI — Universal Medical Intelligence Platform
+
+>>>>>>> 724d974664d7899503c328135258f160f3765805
 
 <div align="center">
 
