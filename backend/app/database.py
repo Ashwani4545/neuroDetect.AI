@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import StaticPool
 
@@ -30,3 +31,9 @@ def get_db():
 def init_db():
     from app import models_db  # noqa: F401 — ensure models are registered before create_all
     Base.metadata.create_all(bind=engine)
+    # create_all does not add columns to an existing prototype database.
+    if 'analyses' in inspect(engine).get_table_names():
+        columns = {column['name'] for column in inspect(engine).get_columns('analyses')}
+        if 'user_id' not in columns:
+            with engine.begin() as connection:
+                connection.execute(text('ALTER TABLE analyses ADD COLUMN user_id VARCHAR'))

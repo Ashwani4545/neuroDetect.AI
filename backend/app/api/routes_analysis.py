@@ -7,8 +7,9 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.config import UPLOAD_DIR, RESULTS_DIR
+from app.auth import current_user
 from app.database import get_db
-from app.models_db import Analysis
+from app.models_db import Analysis, User
 from app.schemas import AnalysisDetail, AnalysisHistoryResponse
 from app.services.analysis_service import ValidationError, validate_upload, save_upload, run_analysis
 
@@ -25,15 +26,15 @@ def _to_detail(a: Analysis) -> AnalysisDetail:
     )
 
 
-def _get_or_404(db: Session, analysis_id: str) -> Analysis:
-    a = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+def _get_or_404(db: Session, analysis_id: str, user: User) -> Analysis:
+    a = db.query(Analysis).filter(Analysis.id == analysis_id, Analysis.user_id == user.id).first()
     if a is None:
         raise HTTPException(status_code=404, detail='Analysis not found.')
     return a
 
 
 @router.post('/analysis/upload', response_model=AnalysisDetail)
-async def upload_analysis(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_analysis(file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(current_user)):
     contents = await file.read()
     try:
         validate_upload(file, contents)
@@ -41,7 +42,7 @@ async def upload_analysis(file: UploadFile = File(...), db: Session = Depends(ge
         raise HTTPException(status_code=400, detail=str(e))
 
     stored_name = save_upload(file, contents)
-    analysis = Analysis(original_filename=file.filename, stored_filename=stored_name, status='pending')
+    analysis = Analysis(user_id=user.id, original_filename=file.filename, stored_filename=stored_name, status='pending')
     db.add(analysis)
     db.commit()
     db.refresh(analysis)
@@ -49,8 +50,8 @@ async def upload_analysis(file: UploadFile = File(...), db: Session = Depends(ge
 
 
 @router.post('/analysis/predict/{analysis_id}', response_model=AnalysisDetail)
-def predict_analysis(analysis_id: str, db: Session = Depends(get_db)):
-    analysis = _get_or_404(db, analysis_id)
+def predict_analysis(analysis_id: str, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    analysis = _get_or_404(db, analysis_id, user)
     if analysis.status == 'processing':
         raise HTTPException(status_code=409, detail='Analysis is already processing.')
     analysis = run_analysis(db, analysis)
@@ -60,13 +61,14 @@ def predict_analysis(analysis_id: str, db: Session = Depends(get_db)):
 @router.get('/analysis/history', response_model=AnalysisHistoryResponse)
 def analysis_history(
     db: Session = Depends(get_db),
+    user: User = Depends(current_user),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     status_filter: str | None = Query(None, alias='status'),
     search: str | None = Query(None),
     sort: str = Query('created_at_desc', pattern='^(created_at_desc|created_at_asc)$'),
 ):
-    q = db.query(Analysis)
+    q = db.query(Analysis).filter(Analysis.user_id == user.id)
     if status_filter:
         q = q.filter(Analysis.status == status_filter)
     if search:
@@ -79,13 +81,13 @@ def analysis_history(
 
 
 @router.get('/analysis/{analysis_id}', response_model=AnalysisDetail)
-def get_analysis(analysis_id: str, db: Session = Depends(get_db)):
-    return _to_detail(_get_or_404(db, analysis_id))
+def get_analysis(analysis_id: str, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    return _to_detail(_get_or_404(db, analysis_id, user))
 
 
 @router.delete('/analysis/{analysis_id}')
-def delete_analysis(analysis_id: str, db: Session = Depends(get_db)):
-    analysis = _get_or_404(db, analysis_id)
+def delete_analysis(analysis_id: str, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    analysis = _get_or_404(db, analysis_id, user)
     for fname, folder in [
         (analysis.stored_filename, UPLOAD_DIR),
         (analysis.mask_filename, RESULTS_DIR),
@@ -101,8 +103,8 @@ def delete_analysis(analysis_id: str, db: Session = Depends(get_db)):
 
 
 @router.get('/analysis/{analysis_id}/original')
-def get_original(analysis_id: str, db: Session = Depends(get_db)):
-    analysis = _get_or_404(db, analysis_id)
+def get_original(analysis_id: str, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    analysis = _get_or_404(db, analysis_id, user)
     path = os.path.join(UPLOAD_DIR, analysis.stored_filename)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail='Original file missing on disk.')
@@ -112,8 +114,8 @@ def get_original(analysis_id: str, db: Session = Depends(get_db)):
 
 
 @router.get('/analysis/{analysis_id}/mask')
-def get_mask(analysis_id: str, db: Session = Depends(get_db)):
-    analysis = _get_or_404(db, analysis_id)
+def get_mask(analysis_id: str, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    analysis = _get_or_404(db, analysis_id, user)
     if not analysis.mask_filename:
         raise HTTPException(status_code=404, detail='No mask available for this analysis.')
     path = os.path.join(RESULTS_DIR, analysis.mask_filename)
@@ -123,8 +125,8 @@ def get_mask(analysis_id: str, db: Session = Depends(get_db)):
 
 
 @router.get('/analysis/{analysis_id}/overlay')
-def get_overlay(analysis_id: str, db: Session = Depends(get_db)):
-    analysis = _get_or_404(db, analysis_id)
+def get_overlay(analysis_id: str, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    analysis = _get_or_404(db, analysis_id, user)
     if not analysis.overlay_filename:
         raise HTTPException(status_code=404, detail='No overlay available for this analysis.')
     path = os.path.join(RESULTS_DIR, analysis.overlay_filename)
@@ -134,8 +136,8 @@ def get_overlay(analysis_id: str, db: Session = Depends(get_db)):
 
 
 @router.get('/analysis/{analysis_id}/export')
-def export_analysis(analysis_id: str, format: str = Query('json', pattern='^(json|pdf)$'), db: Session = Depends(get_db)):
-    analysis = _get_or_404(db, analysis_id)
+def export_analysis(analysis_id: str, format: str = Query('json', pattern='^(json|pdf)$'), db: Session = Depends(get_db), user: User = Depends(current_user)):
+    analysis = _get_or_404(db, analysis_id, user)
     detail = _to_detail(analysis)
 
     disclaimer = (

@@ -29,9 +29,9 @@ backend directly.
   exercises the complete upload → predict → view → export → delete flow
   against `data/ST000001/`, a genuine sample brain CT bundled in this repo —
   not synthetic/mocked data. All 7 tests pass.
-- ❌ **Not implemented**: authentication (this backend has none — anyone who
-  can reach it can see/delete any analysis; fine for a local research
-  prototype, not for a multi-user deployment without adding it first),
+- ✅ **Implemented**: email/password accounts plus configurable Google,
+  LinkedIn, Facebook, and Instagram OAuth. Every analysis is owned by the
+  signed-in account and protected by a short-lived bearer token.
   background job queue (predict is synchronous — fine for single images,
   would need a task queue like Celery/RQ for real concurrency at scale),
   scheduled data-retention purging (the `DATA_RETENTION_DAYS` config exists
@@ -44,6 +44,10 @@ backend directly.
 |---|---|---|
 | GET | `/api/health` | Liveness + DB connectivity |
 | GET | `/api/model/status` | Honest checkpoint status — never fabricates "trained" |
+| POST | `/api/auth/signup` | Create an email/password account |
+| POST | `/api/auth/signin` | Sign in with email/password |
+| GET | `/api/auth/{provider}` | Start configured social sign-in |
+| GET | `/api/auth/{provider}/callback` | Complete social sign-in |
 | POST | `/api/analysis/upload` | Validate + store a file, returns a `pending` analysis |
 | POST | `/api/analysis/predict/{id}` | Run the real pipeline on a stored upload |
 | GET | `/api/analysis/{id}` | Full analysis detail |
@@ -85,9 +89,18 @@ docker compose up --build backend frontend
 existing Django `web`/`db` services without port conflicts: backend on
 `:8001`, frontend on `:5174`.)
 
+## Social sign-in configuration
+
+Copy `backend/.env.example` to `.env`, set a long random `AUTH_SECRET`, and
+add credentials from each provider's developer console. Register the callback
+URLs shown in that file exactly. Instagram OAuth requires an Instagram
+professional account and the provider's approved permissions; consumer
+Instagram passwords are never accepted or handled by this application.
+
 ## Known gaps if you extend this
 
-- No auth — add it before exposing this beyond localhost.
+- Add email verification, password reset, and account recovery before a
+  production launch.
 - `predict` is synchronous — fine for single-image research use; move to a
   background task queue if you need to handle concurrent large uploads.
 - DICOM-format originals aren't rendered client-side (browsers can't display

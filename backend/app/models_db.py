@@ -20,6 +20,9 @@ class Analysis(Base):
     __tablename__ = 'analyses'
 
     id = Column(String, primary_key=True, default=_new_id)
+    # Nullable keeps existing local prototype databases readable; all new
+    # uploads are assigned to the authenticated user by the API.
+    user_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     original_filename = Column(String, nullable=False)
@@ -36,3 +39,15 @@ class Analysis(Base):
 
     processing_time_ms = Column(Integer, nullable=True)
     measurements = Column(JSON, nullable=True)
+
+
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(String, primary_key=True, default=_new_id)
+    email = Column(String, unique=True, nullable=True, index=True)
+    name = Column(String, nullable=False)
+    password_hash = Column(String, nullable=True)
+    provider = Column(String, nullable=True)
+    provider_id = Column(String, nullable=True, unique=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

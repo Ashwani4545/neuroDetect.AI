@@ -3,6 +3,7 @@ import type {
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const TOKEN_KEY = 'neurodetect_auth_token';
 
 class ApiClientError extends Error {
   status: number;
@@ -13,7 +14,10 @@ class ApiClientError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const resp = await fetch(`${API_BASE}${path}`, options);
+  const headers = new Headers(options?.headers);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const resp = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!resp.ok) {
     let detail = `Request failed (${resp.status})`;
     try {
@@ -51,10 +55,10 @@ export const api = {
 
   deleteAnalysis: (id: string) => request<{ success: boolean; id: string }>(`/analysis/${id}`, { method: 'DELETE' }),
 
-  originalUrl: (id: string) => `${API_BASE}/analysis/${id}/original`,
-  maskUrl: (id: string) => `${API_BASE}/analysis/${id}/mask`,
-  overlayUrl: (id: string) => `${API_BASE}/analysis/${id}/overlay`,
-  exportUrl: (id: string, format: 'json' | 'pdf') => `${API_BASE}/analysis/${id}/export?format=${format}`,
+  originalUrl: (id: string) => `${API_BASE}/analysis/${id}/original?access_token=${encodeURIComponent(localStorage.getItem(TOKEN_KEY) || '')}`,
+  maskUrl: (id: string) => `${API_BASE}/analysis/${id}/mask?access_token=${encodeURIComponent(localStorage.getItem(TOKEN_KEY) || '')}`,
+  overlayUrl: (id: string) => `${API_BASE}/analysis/${id}/overlay?access_token=${encodeURIComponent(localStorage.getItem(TOKEN_KEY) || '')}`,
+  exportUrl: (id: string, format: 'json' | 'pdf') => `${API_BASE}/analysis/${id}/export?format=${format}&access_token=${encodeURIComponent(localStorage.getItem(TOKEN_KEY) || '')}`,
 };
 
 export { ApiClientError };

@@ -36,6 +36,23 @@ class HealthStatus(BaseModel):
     database: str
 
 
+class Credentials(BaseModel):
+    email: str
+    password: str
+    name: str | None = None
+
+
+class UserResponse(BaseModel):
+    id: str
+    email: str | None
+    name: str
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: UserResponse
+
+
 class AnalysisHistoryResponse(BaseModel):
     total: int
     page: int

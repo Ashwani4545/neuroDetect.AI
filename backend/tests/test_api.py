@@ -35,7 +35,12 @@ def fresh_db():
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    test_client = TestClient(app)
+    response = test_client.post('/api/auth/signup', json={
+        'name': 'Test User', 'email': 'test@example.com', 'password': 'secure-pass-123',
+    })
+    test_client.headers.update({'Authorization': f"Bearer {response.json()['token']}"})
+    return test_client
 
 
 def test_health(client):

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `text-sm transition-colors ${
@@ -6,6 +7,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export default function Navbar() {
+  const { user, signOut } = useAuth();
   return (
     <nav className="bg-white border-b border-clinical-border sticky top-0 z-20">
       <div className="max-w-[1200px] mx-auto px-12 h-[72px] flex items-center justify-between">
@@ -23,6 +25,7 @@ export default function Navbar() {
           <NavLink to="/history" className={linkClass}>History</NavLink>
           <NavLink to="/model" className={linkClass}>Model Info</NavLink>
           <NavLink to="/settings" className={linkClass}>Settings</NavLink>
+          {user ? <button onClick={signOut} className="text-sm text-clinical-textMuted hover:text-clinical-primary">Sign out</button> : <NavLink to="/signin" className="text-sm text-clinical-primary font-medium">Sign in</NavLink>}
         </div>
       </div>
     </nav>

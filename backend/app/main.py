@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import CORS_ORIGINS
 from app.database import init_db
-from app.api import routes_health, routes_model, routes_analysis
+from app.api import routes_health, routes_model, routes_analysis, routes_auth
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('neurodetect-backend')
@@ -45,3 +45,4 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 app.include_router(routes_health.router, prefix='/api', tags=['health'])
 app.include_router(routes_model.router, prefix='/api', tags=['model'])
 app.include_router(routes_analysis.router, prefix='/api', tags=['analysis'])
+app.include_router(routes_auth.router, prefix='/api', tags=['auth'])
