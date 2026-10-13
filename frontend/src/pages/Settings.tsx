@@ -20,7 +20,7 @@ export default function Settings() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-xl font-semibold mb-6">Settings</h1>
+      <h1 className="font-serif text-[22px] font-semibold text-clinical-primary mb-6">Settings</h1>
 
       <div className="clinical-card p-5 mb-4">
         <h3 className="font-semibold mb-3">Appearance</h3>
@@ -48,7 +48,7 @@ export default function Settings() {
       <div className="clinical-card p-5">
         <h3 className="font-semibold mb-2">Application Status</h3>
         <p className="text-sm text-clinical-textMuted">
-          Backend: {health ? <span className="text-emerald-700 font-medium">{health.status} (DB: {health.database})</span> : <span className="text-red-600">unreachable</span>}
+          Backend: {health ? <span className="text-clinical-accent font-medium">{health.status} (DB: {health.database})</span> : <span className="text-clinical-danger">unreachable</span>}
         </p>
       </div>
     </div>

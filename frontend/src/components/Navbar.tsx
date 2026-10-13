@@ -1,19 +1,23 @@
 import { NavLink } from 'react-router-dom';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-    isActive ? 'bg-clinical-primary text-white' : 'text-clinical-text hover:bg-gray-100'
+  `text-sm transition-colors ${
+    isActive ? 'font-medium text-clinical-primary' : 'text-clinical-textMuted hover:text-clinical-primary'
   }`;
 
 export default function Navbar() {
   return (
     <nav className="bg-white border-b border-clinical-border sticky top-0 z-20">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <NavLink to="/" className="flex items-center gap-2 font-semibold text-clinical-primary">
-          <span className="text-lg">🧠</span>
-          <span>NeuroDetect AI</span>
+      <div className="max-w-[1200px] mx-auto px-12 h-[72px] flex items-center justify-between">
+        <NavLink to="/" className="flex items-center gap-2.5">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#13293D" strokeWidth="1.6">
+            <path d="M9 3a4 4 0 0 0-4 4v1.2A3.5 3.5 0 0 0 3 11.5a3.5 3.5 0 0 0 1.8 3.06A3.5 3.5 0 0 0 7.5 19H9" strokeLinecap="round" />
+            <path d="M15 3a4 4 0 0 1 4 4v1.2a3.5 3.5 0 0 1 2 3.3 3.5 3.5 0 0 1-1.8 3.06A3.5 3.5 0 0 1 16.5 19H15" strokeLinecap="round" />
+            <path d="M9 3v18M15 3v18" strokeLinecap="round" />
+          </svg>
+          <span className="font-serif text-[19px] font-semibold text-clinical-primary">NeuroDetect AI</span>
         </NavLink>
-        <div className="flex gap-1">
+        <div className="flex gap-8">
           <NavLink to="/" end className={linkClass}>Home</NavLink>
           <NavLink to="/upload" className={linkClass}>Upload</NavLink>
           <NavLink to="/history" className={linkClass}>History</NavLink>

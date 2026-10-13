@@ -8,7 +8,7 @@ export default function ModelInfo() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-xl font-semibold mb-4">Model Information</h1>
+      <h1 className="font-serif text-[22px] font-semibold text-clinical-primary mb-4">Model Information</h1>
       {!status ? (
         <p className="text-clinical-textMuted text-sm">Loading…</p>
       ) : (
@@ -20,7 +20,7 @@ export default function ModelInfo() {
           <Row label="Input preprocessing" value="HU windowing (WL=35/WW=100) for DICOM; CLAHE contrast normalization for JPG/PNG" />
           <Row label="Output interpretation" value="Binary segmentation mask — foreground pixels indicate the model's hypodense-region prediction, not a confirmed diagnosis" />
           <Row label="Evaluation metrics" value="Not available — no trained model has been evaluated yet" highlight />
-          <div className="bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-md px-4 py-3">{status.message}</div>
+          <div className="bg-clinical-warnBg border border-clinical-warnBorder text-clinical-warnText text-sm rounded-md px-4 py-3">{status.message}</div>
           <div className="text-xs text-clinical-textMuted">
             No Dice score, IoU, sensitivity, specificity, or clinical validation claim is made here — none has been measured.
             This page reflects the backend's actual, live checkpoint status, not a static description.
@@ -32,5 +32,5 @@ export default function ModelInfo() {
 }
 
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (<div><dt className="text-xs text-clinical-textMuted uppercase tracking-wide">{label}</dt><dd className={`text-sm mt-0.5 ${highlight ? 'text-amber-700 font-medium' : ''}`}>{value}</dd></div>);
+  return (<div><dt className="text-xs text-clinical-textMuted uppercase tracking-wide">{label}</dt><dd className={`text-sm mt-0.5 ${highlight ? 'text-clinical-warn font-medium' : ''}`}>{value}</dd></div>);
 }

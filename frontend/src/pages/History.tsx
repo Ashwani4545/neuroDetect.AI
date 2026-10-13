@@ -34,7 +34,7 @@ export default function History() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-xl font-semibold mb-4">Analysis History</h1>
+      <h1 className="font-serif text-[22px] font-semibold text-clinical-primary mb-4">Analysis History</h1>
 
       <form onSubmit={onSearchSubmit} className="flex flex-wrap gap-2 mb-4">
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by filename…" className="border border-clinical-border rounded-md px-3 py-1.5 text-sm flex-1 min-w-[200px]" />
@@ -60,7 +60,7 @@ export default function History() {
             </thead>
             <tbody>
               {results.map((r) => (
-                <tr key={r.id} className="border-b border-gray-100 last:border-0">
+                <tr key={r.id} className="border-b border-clinical-borderLight last:border-0">
                   <td className="px-4 py-2"><Link to={`/analysis/${r.id}`} className="text-clinical-primary hover:underline">{r.original_filename}</Link></td>
                   <td className="px-4 py-2">{new Date(r.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-2 capitalize">{r.status}</td>
@@ -69,11 +69,11 @@ export default function History() {
                   <td className="px-4 py-2 text-right">
                     {confirmDeleteId === r.id ? (
                       <span className="flex gap-2 justify-end">
-                        <button onClick={() => doDelete(r.id)} className="text-red-600 text-xs font-medium">Confirm</button>
+                        <button onClick={() => doDelete(r.id)} className="text-clinical-danger text-xs font-medium">Confirm</button>
                         <button onClick={() => setConfirmDeleteId(null)} className="text-clinical-textMuted text-xs">Cancel</button>
                       </span>
                     ) : (
-                      <button onClick={() => setConfirmDeleteId(r.id)} className="text-xs text-clinical-textMuted hover:text-red-600">Delete</button>
+                      <button onClick={() => setConfirmDeleteId(r.id)} className="text-xs text-clinical-textMuted hover:text-clinical-danger">Delete</button>
                     )}
                   </td>
                 </tr>

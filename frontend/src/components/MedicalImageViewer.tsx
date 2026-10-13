@@ -92,9 +92,9 @@ export default function MedicalImageViewer({ originalUrl, maskUrl, isDicom, imag
     for (let i = 0; i < imgData.data.length; i += 4) {
       const v = imgData.data[i];
       if (v > 10) {
-        imgData.data[i] = 220;
-        imgData.data[i + 1] = 38;
-        imgData.data[i + 2] = 38;
+        imgData.data[i] = 180; // clinical-danger red (#B42318)
+        imgData.data[i + 1] = 35;
+        imgData.data[i + 2] = 24;
         imgData.data[i + 3] = 255;
       } else {
         imgData.data[i + 3] = 0;
@@ -146,23 +146,23 @@ export default function MedicalImageViewer({ originalUrl, maskUrl, isDicom, imag
               key={m}
               onClick={() => setMode(m)}
               disabled={m === 'original' && !originalUrl}
-              className={`text-xs px-2.5 py-1.5 rounded-md border capitalize ${
-                mode === m ? 'bg-clinical-primary text-white border-clinical-primary' : 'border-clinical-border text-clinical-textMuted hover:bg-gray-50'
+              className={`text-xs px-3 py-1.5 rounded border capitalize ${
+                mode === m ? 'bg-clinical-primary text-clinical-bg border-clinical-primary' : 'border-clinical-border text-clinical-textMuted hover:bg-[#FAF8F3]'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               {m === 'compare' ? 'Side-by-side' : m}
             </button>
           ))}
         </div>
-        <button onClick={resetView} className="text-xs px-2.5 py-1.5 rounded-md border border-clinical-border hover:bg-gray-50">
-          Reset view
+        <button onClick={resetView} className="text-xs px-3 py-1.5 rounded border border-clinical-border text-clinical-textFaint hover:bg-[#FAF8F3]">
+          Reset View
         </button>
       </div>
 
       {mode === 'overlay' && (
-        <div className="flex items-center gap-2 mb-3 text-xs text-clinical-textMuted">
+        <div className="flex items-center gap-2.5 mb-3 text-xs text-clinical-textFaint">
           <span>Overlay opacity</span>
-          <input type="range" min={0} max={1} step={0.05} value={opacity} onChange={(e) => setOpacity(parseFloat(e.target.value))} className="w-40" />
+          <input type="range" min={0} max={1} step={0.05} value={opacity} onChange={(e) => setOpacity(parseFloat(e.target.value))} className="w-40 accent-clinical-primary" />
           <span>{Math.round(opacity * 100)}%</span>
         </div>
       )}
@@ -174,7 +174,7 @@ export default function MedicalImageViewer({ originalUrl, maskUrl, isDicom, imag
       )}
 
       <div
-        className="relative overflow-hidden bg-black rounded-md flex items-center justify-center cursor-grab active:cursor-grabbing"
+        className="relative overflow-hidden bg-[#14191F] rounded-md flex items-center justify-center cursor-grab active:cursor-grabbing"
         style={{ height: 420 }}
         onWheel={onWheel}
         onMouseDown={onMouseDown}

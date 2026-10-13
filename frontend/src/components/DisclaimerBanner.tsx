@@ -1,8 +1,8 @@
 export default function DisclaimerBanner({ compact = false }: { compact?: boolean }) {
   return (
     <div
-      className={`bg-amber-50 border border-amber-300 text-amber-900 rounded-md ${
-        compact ? 'text-xs px-3 py-2' : 'text-sm px-4 py-3'
+      className={`bg-clinical-warnBg border border-clinical-warnBorder text-clinical-warnText rounded-md ${
+        compact ? 'text-xs px-3 py-2' : 'text-[13.5px] px-4 py-3'
       }`}
     >
       <strong>AI-generated segmentation — requires expert review.</strong>{' '}
