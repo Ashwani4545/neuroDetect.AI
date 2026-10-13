@@ -2,6 +2,7 @@ import re
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from urllib.parse import quote
 from sqlalchemy.orm import Session
 
 from app.auth import (create_token, current_user, exchange_provider_code, hash_password,
@@ -53,7 +54,11 @@ def me(user: User = Depends(current_user)):
 def oauth_start(provider: str, request: Request):
     if provider not in OAUTH_PROVIDERS:
         raise HTTPException(status_code=404, detail='Unsupported sign-in provider.')
-    return RedirectResponse(provider_redirect(provider, request))
+    try:
+        return RedirectResponse(provider_redirect(provider, request))
+    except HTTPException as exc:
+        message = quote(exc.detail)
+        return RedirectResponse(f'{FRONTEND_URL}/signin?error={message}', status_code=303)
 
 
 @router.get('/auth/{provider}/callback', name='oauth_callback')

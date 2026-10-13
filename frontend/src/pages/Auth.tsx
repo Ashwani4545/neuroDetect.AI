@@ -12,7 +12,10 @@ export default function Auth({ mode }: { mode: 'signin' | 'signup' }) {
   const { signIn } = useAuth(); const navigate = useNavigate(); const location = useLocation();
 
   useEffect(() => {
-    const token = new URLSearchParams(location.search).get('token');
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    const providerError = params.get('error');
+    if (providerError) setError(providerError);
     if (!token) return;
     fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => response.ok ? response.json() as Promise<User> : Promise.reject())
